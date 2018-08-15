@@ -12,21 +12,16 @@ def wall(request):
         return redirect('/')
     else:
         id=request.session["user_id"]
-        themessages = Message.objects.all()
-
-        # print('Messages:', themessages)
         msg=[]
-        for x in themessages:
+        for x in Message.objects.all():
+            msgid= x.id 
+            author_id = x.author_id      
+
+            u = User.objects.get(id=x.author_id)
             c = Comment.objects.filter(message=x)
-            msgid= x.id
-            author_id = x.author_id
-            
-            u = User.objects.get(id=author_id)
-            c = Comment.objects.filter(message=x)
+
             print("#"*30)
             print(User.objects.filter(messages__id=1).values())
-            for g in c:
-                n = 
             mix = {
                 "id": x.id,
                 "messagecontext":x.messagecontext,
@@ -35,7 +30,8 @@ def wall(request):
                 "updated_at":x.updated_at,
                 "first_name":u.first_name,
                 "last_name":u.last_name,
-                "comment":c
+                "comment":c,
+                "Message":x
             }
             msg.append(mix)
             # print(c)
@@ -43,22 +39,19 @@ def wall(request):
             'userinfo' : User.objects.get(id=id),
             'msg' : msg
         }
+        Mess = Message.objects.all()
+        print("8"*20,Mess, "8"*10)
         # print(msg)
         return render(request, "thewall/wall.html", {"data": data} )
 
 def register(request):
     if request.method =="POST":
         errors = User.objects.validator(request.POST)
-        request.session['first_name'] = request.POST['first_name']
-        request.session['last_name'] = request.POST['last_name']
-        request.session['email'] = request.POST['email']
-
         EmailExists= User.objects.filter(email=request.POST['email'])
         if not len(EmailExists) == 0:
             print("email exists error")
             messages.error(request, "Email " + request.POST['email'] + " is already registered")
             return redirect('/')
-
         if len(errors):
             for key, value in errors.items():
                 messages.error(request, value, extra_tags=key)
@@ -71,7 +64,9 @@ def register(request):
 
             User.objects.create(first_name=first_name, last_name=last_name, email=email, password=pwhashed) 
             messages.success(request, "Successfully added")
-            request.session.clear()
+            request.session['first_name'] = request.POST['first_name']
+            request.session['last_name'] = request.POST['last_name']
+            request.session['email'] = request.POST['email']
             return redirect('/')
     return redirect("/")
 
@@ -117,13 +112,14 @@ def message(request):
                 return redirect("/wall")
 
 def comment(request,id):
+    print("*-"*12, "id: ", id)
     if "user_id" not in request.session:
         return redirect('/')
     else: 
         if request.method == "POST":
             content= request.POST["content"]
             if len(content) == 0:
-                messages.error(request, "Message can not be empty you fuck")
+                messages.error(request, "Message is blank")
                 return redirect("/wall")
             else:
                 user_id= request.session['user_id']
@@ -131,3 +127,19 @@ def comment(request,id):
                 this_user= User.objects.get(id=user_id)
                 Comment.objects.create(commentcontext=content, user=this_user, message=this_message)
                 return redirect("/wall")
+
+def deleteComment(request, id):
+    if "user_id" not in request.session:
+        return redirect("/")
+    else:
+        d = Comment.objects.get(id=id)
+        d.delete()
+        return redirect("/wall")
+
+def deleteMessage(request, id):
+    if "user_id" not in request.session:
+        return redirect("/")
+    else:
+        d = Message.objects.get(id=id)
+        d.delete()
+        return redirect("/wall")

@@ -1,38 +1,36 @@
 from django.db import models
 import re
 EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9.+_-]+@[a-zA-Z0-9._-]+\.[a-zA-Z]+$')
-PW_REGEX = re.compile(r'^(?=.*\d+)(?=.*[A-Z])[0-9a-zA-Z!@#$%]{8,255}$')
+PW_REGEX = re.compile(r'^.*(?=.{4,10})(?=.*\d)(?=.*[a-zA-Z]).*$')
 
 
 class Manager(models.Manager):
     def validator(self, postData):
-        x = {}
-
+        errors = {}
         if len(postData['first_name']) == 0 :
-            x['first_name']= "First name must not be empty"
+            errors['first_name']= "First name must not be empty"
         if len(postData['first_name']) > 255 :
-            x['first_name']= "Course name can not be more than 255 characters"
+            errors['first_name']= "Course name can not be more than 255 characters"
 
         if len(postData['last_name']) == 0 :
-            x['last_name']= "Last name must not be empty"
+            errors['last_name']= "Last name must not be empty"
         if len(postData['last_name']) > 255 :
-            x['last_name']= "Last name can not be more than 255 characters"
+            errors['last_name']= "Last name can not be more than 255 characters"
         
         if len(postData['email']) == 0 :
-            x['email']= "Email must not be empty"
+            errors['email']= "Email must not be empty"
         if len(postData['email']) > 255 :
-            x['email']= "Email can not be more than 255 characters"
+            errors['email']= "Email can not be more than 255 characters"
 
         if len(postData['password']) < 8 :
-            x['password']= "Password must be at least 8 characters"
+            errors['password']= "Password must be at least 8 characters"
         if len(postData['password']) > 255 :
-            x['password']= "Password can not be more than 255 characters"
-        elif  not postData['password'] == postData['confirmpassword']:
-            x['password']= "Password does not match with the confirmation"
+            errors['password']= "Password can not be more than 255 characters"
+        elif not postData['password'] == postData['confirmpassword']:
+            errors['password']= "Password does not match with the confirmation"
         elif not PW_REGEX.match(postData['password']):             
-            x['password']= "Need at least one number and one capital letter for the password"
-            
-        return x
+            errors['password']= "Need at least one number and one capital letter for the password"   
+        return errors
 
 class User(models.Model):
     first_name = models.CharField(max_length=255)
